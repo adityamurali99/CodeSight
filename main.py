@@ -28,7 +28,7 @@ WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 
 # --- UTILS ---
 
-async de verify_signature(request: Request, signature: str):
+async def verify_signature(request: Request, signature: str):
     """Verifies the HMAC signature from GitHub."""
     if not signature:
         raise HTTPException(status_code=401, detail="X-Hub-Signature-256 missing")
