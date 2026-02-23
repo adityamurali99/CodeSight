@@ -1,5 +1,3 @@
-# prompts.py
-
 SYSTEM_PROMPT = """
 You are a Senior Full-Stack Engineer performing an Augmented Code Review. 
 You will receive:
