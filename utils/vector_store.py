@@ -7,63 +7,55 @@ class VectorStore:
     def __init__(self, db_path: str = "./chroma_db"):
         self.client = PersistentClient(path=db_path)
         self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        # Using a custom embedding function to keep it LangChain-free
         self.collection = self.client.get_or_create_collection(
             name="repo_context",
             metadata={"hnsw:space": "cosine"}
         )
 
-    def _get_embedding(self, text: str):
-        """Direct call to OpenAI for embeddings."""
-        text = text.replace("\n", " ")
-        return self.openai_client.embeddings.create(
-            input=[text], 
+    def _get_batch_embeddings(self, texts: list):
+        """Optimized: Sends multiple chunks in one API call."""
+        cleaned_texts = [t.replace("\n", " ") for t in texts]
+        response = self.openai_client.embeddings.create(
+            input=cleaned_texts, 
             model="text-embedding-3-small"
-        ).data[0].embedding
+        )
+        return [item.embedding for item in response.data]
 
     def _split_code(self, text: str, chunk_size: int = 1000):
-        """Naive Python-aware splitter using regex for 'def' and 'class' boundaries."""
-        # Split by double newlines or major definitions to keep logic together
         chunks = re.split(r'\n(?=def |class )', text)
-        refined_chunks = []
-        for chunk in chunks:
-            if len(chunk) > chunk_size:
-                # Fallback for massive functions: split by lines
-                lines = chunk.split('\n')
-                for i in range(0, len(lines), 20):
-                    refined_chunks.append("\n".join(lines[i:i+20]))
-            else:
-                refined_chunks.append(chunk)
-        return refined_chunks
+        return [c for c in chunks if c.strip()]
 
     def index_repository(self, repo_path: str):
-        """Walks repo, chunks code, generates embeddings, and stores in Chroma."""
+        """Walks repo and uses batch processing to store embeddings."""
+        documents, embeddings, metadatas, ids = [], [], [], []
+        
         for root, _, files in os.walk(repo_path):
+            if ".git" in root or "__pycache__" in root: continue
             for file in files:
                 if file.endswith(".py"):
                     full_path = os.path.join(root, file)
                     with open(full_path, "r", encoding="utf-8") as f:
-                        content = f.read()
-                        chunks = self._split_code(content)
+                        chunks = self._split_code(f.read())
+                        if not chunks: continue
                         
-                        for i, chunk in enumerate(chunks):
-                            self.collection.add(
-                                documents=[chunk],
-                                embeddings=[self._get_embedding(chunk)],
-                                metadatas=[{"source": full_path}],
-                                ids=[f"{full_path}_{i}"]
-                            )
+                        # Batch get embeddings for all chunks in this file
+                        file_embeddings = self._get_batch_embeddings(chunks)
+                        
+                        for i, (chunk, emb) in enumerate(zip(chunks, file_embeddings)):
+                            documents.append(chunk)
+                            embeddings.append(emb)
+                            metadatas.append({"source": file})
+                            ids.append(f"{file}_{i}")
+
+        if documents:
+            self.collection.add(
+                documents=documents,
+                embeddings=embeddings,
+                metadatas=metadatas,
+                ids=ids
+            )
 
     def query_context(self, code_snippet: str, n_results: int = 2) -> str:
-        """Retrieves relevant code chunks."""
-        query_emb = self._get_embedding(code_snippet)
-        results = self.collection.query(
-            query_embeddings=[query_emb],
-            n_results=n_results
-        )
-        
-        context_blocks = []
-        for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
-            context_blocks.append(f"--- Context from {meta['source']} ---\n{doc}")
-            
-        return "\n\n".join(context_blocks)
+        query_emb = self._get_batch_embeddings([code_snippet])[0]
+        results = self.collection.query(query_embeddings=[query_emb], n_results=n_results)
+        return "\n\n".join([f"Context: {d}" for d in results['documents'][0]])

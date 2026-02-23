@@ -1,43 +1,40 @@
-# reviewer.py
 import json
 from utils.analyzer import StaticAnalyzer
-from utils.vector_store import VectorStore
-from utils.sandbox import validate_code_safety # Our new utility
+from utils.sandbox import validate_code_safety
 from schemas import ReviewResponse
 from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 
-v_store = VectorStore()
-
-async def analyze_code(code: str, language: str) -> ReviewResponse:
+async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
     from main import client
     
-    # STEP 1: Pre-processing (Static Analysis + RAG)
-    static_data = StaticAnalyzer.run_analysis(code)
-    context = v_store.query_context(code)
+    clean_code = "\n".join([l[1:] for l in diff_text.split('\n') if l.startswith('+') and not l.startswith('+++')])
     
-    # STEP 2: Agent 1 - Initial Review
-    initial_payload = f"CODE:\n{code}\n\nSTATIC ANALYSIS:\n{static_data}\n\nCONTEXT:\n{context}"
+    # Deterministic Context Retrieval
+    dependency_context = graph.get_context(clean_code, hops=2)
+    impact_context = graph.get_impact_analysis(clean_code, hops=1)
+    static_data = StaticAnalyzer.run_analysis(clean_code)
+    
+    # Agent 1: Review
+    payload = (
+        f"CODE:\n{clean_code}\n\n"
+        f"STATIC ANALYSIS:\n{static_data}\n\n"
+        f"DEPENDENCIES:\n{dependency_context}\n\n"
+        f"POTENTIAL IMPACT:\n{impact_context}"
+    )
+    
     resp1 = await client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": initial_payload}],
+        model="gpt-4o",
+        messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": payload}],
         response_format={"type": "json_object"}
     )
-    draft_content = resp1.choices[0].message.content
-    draft_json = json.loads(draft_content)
+    draft = json.loads(resp1.choices[0].message.content)
 
-    # STEP 3: Sandbox Validation (The "Smoke Test")
-    fixed_candidate = draft_json.get("fixed_code", "")
-    sandbox_result = validate_code_safety(fixed_candidate)
-
-    # STEP 4: Agent 2 - The Judge (Reflection & Audit)
-    final_payload = (
-        f"STATIC ANALYSIS DATA: {static_data}\n"
-        f"SANDBOX RESULTS: {sandbox_result}\n"
-        f"DRAFT TO JUDGE: {draft_content}"
-    )
+    # Agent 2: Audit
+    sandbox = validate_code_safety(draft.get("fixed_code", ""))
+    final_payload = f"DATA: {static_data}\nSANDBOX: {sandbox}\nDRAFT: {draft}"
     
     resp2 = await client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[{"role": "system", "content": AUDITOR_PROMPT}, {"role": "user", "content": final_payload}],
         response_format={"type": "json_object"}
     )
