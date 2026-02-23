@@ -3,10 +3,9 @@ from utils.analyzer import StaticAnalyzer
 from utils.sandbox import validate_code_safety
 from schemas import ReviewResponse
 from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
+from main import client
 
 async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
-    from main import client
-    
     clean_code = "\n".join([l[1:] for l in diff_text.split('\n') if l.startswith('+') and not l.startswith('+++')])
     
     # Deterministic Context Retrieval
