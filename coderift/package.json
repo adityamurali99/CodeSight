@@ -3,16 +3,23 @@
   "displayName": "Coderift",
   "publisher": "AdityaMurali",
   "description": "Catch issues. Fix faster. Never leave your editor.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "icon": "images/logo.png",
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"
   },
+  "keywords": [
+    "AI",
+    "Code Review",
+    "GPT-4",
+    "Python",
+    "Automation",
+    "Refactoring"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/adityamurali99/Coderift",
-    "directory": "coderift"
+    "url": "https://github.com/adityamurali99/Coderift"
   },
   "engines": {
     "vscode": "^1.80.0"
@@ -23,6 +30,9 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:coderift.review"
+  ],
   "contributes": {
     "commands": [
       {

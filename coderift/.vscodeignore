@@ -1,8 +1,10 @@
-!images
-!images/*.png
 .vscode/**
 .vscode-test/**
 src/**
-node_modules/**
 tsconfig.json
 **/*.map
+.gitignore
+.gitattributes
+
+!images/*.png
+node_modules/**
