@@ -6,7 +6,7 @@ from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 from utils.factory import client
 
 async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
-    # THE EASY FIX: Keep whitespace after the '+' to preserve indentation
+    print("🚀 BACKGROUND TASK STARTED")
     lines = diff_text.split('\n')
     clean_lines = []
     
