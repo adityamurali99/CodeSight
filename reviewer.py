@@ -1,43 +1,49 @@
 import json
+import os
+from openai import AsyncOpenAI  
 from utils.analyzer import StaticAnalyzer
 from utils.sandbox import validate_code_safety
 from schemas import ReviewResponse
 from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
-from utils.factory import client
 
-async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
+async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> ReviewResponse:
     print("🚀 BACKGROUND TASK: analyze_code started", flush=True)
     
-    # --- 1. SMART CONTENT DETECTION ---
-    # Check if input is a Git Diff (GitHub) or Raw Code (VS Code)
+    # 1. INITIALIZE CLIENT WITH USER KEY
+    # Fallback to env var for GitHub webhooks, otherwise use the provided user key
+    if api_key is not None:
+        current_key = api_key
+    else:
+        current_key = os.getenv("OPENAI_API_KEY")
+
+    if not current_key or current_key.strip() == "":
+        raise ValueError("No valid OpenAI API key provided.")
+
+    # Create a local client for this specific request
+    # This ensures your server handles multiple users with different keys safely
+    client = AsyncOpenAI(api_key=current_key)
+
+    # --- 2. SMART CONTENT DETECTION (No changes needed) ---
     is_diff = diff_text.startswith("diff --git") or "@@" in diff_text
 
     if is_diff:
-        print("DEBUG: Processing as GitHub Diff", flush=True)
         lines = diff_text.split('\n')
         clean_lines = []
         for line in lines:
             stripped_line = line.strip()
-            # Extract only the added lines (+)
             if stripped_line.startswith('+') and not stripped_line.startswith('+++'):
-                # Preserve indentation by finding the first '+'
                 clean_lines.append(line[line.find('+')+1:]) 
         clean_code = "\n".join(clean_lines).strip()
     else:
-        print("DEBUG: Processing as Raw VS Code text", flush=True)
-        # No diff markers found, treat the entire payload as the target code
         clean_code = diff_text.strip()
 
-    # --- 2. VALIDATION ---
     if not clean_code:
         return ReviewResponse(
-            thought_process="Analysis skipped: No valid code content detected in the input.",
+            thought_process="Analysis skipped: No valid code content detected.",
             findings=[],
             summary="No new code detected for analysis.",
             fixed_code=""
         )
-
-    print(f"DEBUG: FINAL CLEAN CODE (first 100 chars):\n{clean_code[:100]}", flush=True)
 
     # --- 3. CONTEXT & ANALYSIS ---
     dependency_context = graph.get_context(clean_code, hops=2)
@@ -51,6 +57,7 @@ async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
         f"### REPOSITORY CONTEXT:\nDependencies: {dependency_context}\nImpact: {impact_context}"
     )
     
+    # Use the local 'client' variable
     resp1 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -65,6 +72,7 @@ async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
     sandbox = validate_code_safety(draft.get("fixed_code", ""))
     final_payload = f"DATA: {static_data}\nSANDBOX: {sandbox}\nDRAFT: {draft}"
     
+    # Use the local 'client' variable again
     resp2 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[

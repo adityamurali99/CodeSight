@@ -1,17 +1,23 @@
 {
   "name": "codesight",
-  "displayName": "CodeSight",
-  "description": "",
-  "version": "0.0.1",
+  "displayName": "CodeSight AI",
+  "publisher": "AdityaMurali",
+  "description": "AI-powered code reviews and quick fixes directly in your editor.",
+  "version": "0.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adityamurali99/CodeSight",
+    "directory": "codesight"
+  },
   "engines": {
-      "vscode": "^1.104.0"
+    "vscode": "^1.80.0"
   },
   "categories": [
+    "Programming Languages",
+    "Linters",
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:codesight.review"
-],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -19,7 +25,18 @@
         "command": "codesight.review",
         "title": "CodeSight: Review Current File"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "CodeSight AI",
+      "properties": {
+        "codesight.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Enter your OpenAI API Key to power CodeSight reviews.",
+          "scope": "application"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -32,14 +49,14 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "@types/vscode": "^1.109.0",
+    "@types/vscode": "^1.80.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.39.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
+    "eslint": "^9.16.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
-    "axios": "^1.13.5"
+    "axios": "^1.6.0"
   }
 }
