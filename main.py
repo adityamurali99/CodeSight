@@ -42,6 +42,7 @@ async def verify_signature(request: Request, signature: str):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 async def process_review_task(repo_name: str, pr_number: int, diff_url: str, base_branch: str):
+    print(f"Processing review for PR #{pr_number} in {repo_name}", flush=True)
     try:
         repo_files = await github.get_repo_contents(repo_name, base_branch)
         graph_manager.build_from_contents(repo_files)
