@@ -11,22 +11,27 @@ async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
         print("Starting AI analysis...", flush=True)
     except Exception as e:
         print(f"❌ CRITICAL ERROR: {str(e)}", flush=True)
-        
+
     lines = diff_text.split('\n')
     clean_lines = []
     
     for line in lines:
-        # Only grab lines that start with a single '+', but ignore the '+++' header
-        if line.startswith('+') and not line.startswith('+++'):
-            # This keeps the indentation (spaces) intact
-            clean_lines.append(line[1:])
+        stripped_line = line.strip()
+        # Ensure it's an addition but NOT the file header
+        if stripped_line.startswith('+') and not stripped_line.startswith('+++'):
+            # Use lstrip to remove only the '+' but keep the indentation
+            # Note: line[1:] is usually safer for indentation than stripped_line
+            clean_lines.append(line[line.find('+')+1:]) 
             
-    clean_code = "\n".join(clean_lines)
+    clean_code = "\n".join(clean_lines).strip()
     
-    # Check if we actually have code to review
     if not clean_code.strip():
-        # Return a dummy response if the diff was empty to avoid AI confusion
-        return ReviewResponse(summary="No new code detected in this diff.", impact_analysis="None")
+        return ReviewResponse(
+            thought_process="Analysis skipped: The provided diff contained no valid code additions.",
+            findings=[],  # Matches List[ReviewFinding]
+            summary="No new code detected in this diff.",
+            fixed_code=""
+        )
 
     # --- Keep the rest of your logic as is ---
     dependency_context = graph.get_context(clean_code, hops=2)
