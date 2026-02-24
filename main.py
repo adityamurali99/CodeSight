@@ -59,13 +59,20 @@ async def process_review_task(repo_name: str, pr_number: int, diff_url: str, bas
     except Exception as e:
         logger.error(f"Pipeline Error: {e}")
 
+
 @app.post("/webhook")
 async def github_webhook(request: Request, background_tasks: BackgroundTasks, x_hub_signature_256: str = Header(None)):
     await verify_signature(request, x_hub_signature_256)
     payload = await request.json()
     
-    if request.headers.get("X-GitHub-Event") == "pull_request":
-        if payload.get("action") in ["opened", "synchronize"]:
+    event_type = request.headers.get("X-GitHub-Event")
+    action = payload.get("action")
+    
+    print(f"Received {event_type} with action: {action}")
+
+    #check comment  
+    if event_type == "pull_request":
+        if action in ["opened", "synchronize", "reopened"]:
             background_tasks.add_task(
                 process_review_task, 
                 payload["repository"]["full_name"],
@@ -74,4 +81,5 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks, x_
                 payload["pull_request"]["base"]["ref"]
             )
             return {"status": "accepted"}
-    return {"status": "ignored"}
+            
+    return {"status": "ignored", "reason": f"Action {action} on {event_type} not tracked"}
