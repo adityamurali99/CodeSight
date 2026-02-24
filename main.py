@@ -55,7 +55,6 @@ async def process_review_task(repo_name: str, pr_number: int, diff_url: str, bas
         graph_manager.build_from_contents(repo_files)
         
         diff_text = await github.get_diff(diff_url)
-        # Uses default internal key
         review_result = await analyze_code(diff_text, graph_manager)
 
         findings_md = ""
@@ -101,15 +100,14 @@ async def analyze_local(request: Request):
     """
     data = await request.json()
     user_code = data.get("code")
-    user_key = data.get("apiKey") # Received from VS Code settings
+    user_key = data.get("apiKey") 
     if not user_key or user_key.strip() == "":
         raise HTTPException(
             status_code=400, 
-            detail="API Key is missing. Please enter your key in CodeSight settings."
+            detail="API Key is missing. Please enter your key in Coderift settings."
         )
 
     try:
-        # We pass the user_key into our analyzer
         review_result = await analyze_code(user_code, graph_manager, api_key=user_key)
         return review_result.dict()
     except Exception as e:
