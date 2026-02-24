@@ -3,6 +3,7 @@ import hmac
 import hashlib
 import logging
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Header
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from utils.factory import client
 
@@ -15,6 +16,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api-suite")
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins (essential for VS Code testing)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows POST, GET, etc.
+    allow_headers=["*"],  # Allows all headers
+)
+
 github = GitHubClient()
 graph_manager = GraphManager()
 
@@ -91,3 +100,14 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks, x_
             return {"status": "accepted"}
             
     return {"status": "ignored", "reason": f"Action {action} on {event_type} not tracked"}
+
+@app.post("/analyze-local")
+async def analyze_local(request: Request):
+    data = await request.json()
+    # Reuse your existing logic
+    review_result = await analyze_code(data.get("code"), graph_manager)
+    return review_result.dict()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)

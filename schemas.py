@@ -7,22 +7,19 @@ class CodeSnippet(BaseModel):
     language: str = "python"
 
 class ReviewFinding(BaseModel):
-    # This allows the AI to send 'type' or 'category'
-    category: str = Field(..., alias="type")
+    category: str = Field("General", alias="type")
     
-    # This allows 'line', 'line_number', or 'line_no'
-    line_number: Optional[int] = Field(None, alias="line")
+    # AI often forgets line numbers; defaulting to 1 prevents a crash
+    line_number: int = Field(1, alias="line") 
     
     issue: str
     
-    # This allows 'fix', 'suggestion', or 'recommended_fix'
-    suggestion: str = Field(..., alias="fix")
+    # Make this Optional so it doesn't crash if 'fix' is missing
+    suggestion: Optional[str] = Field(None, alias="fix")
 
-    # This config is CRITICAL: it allows the model to be populated 
-    # using either the field name OR the alias.
     model_config = ConfigDict(
         populate_by_name=True,
-        extra="ignore" # Prevents crashing if AI adds random extra fields
+        extra="ignore"
     )
 
 class ReviewResponse(BaseModel):
