@@ -21,6 +21,19 @@ graph_manager = GraphManager()
 
 WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 
+
+@app.get("/health")
+async def health_check():
+    """
+    Standard health check for cloud providers (Railway, Render, AWS).
+    Returns 200 OK if the service is running.
+    """
+    return {
+        "status": "healthy",
+        "service": "code-reviewer-ai",
+        "version": "1.0.0"
+    }
+
 async def verify_signature(request: Request, signature: str):
     if not signature:
         raise HTTPException(status_code=401, detail="Signature missing")
