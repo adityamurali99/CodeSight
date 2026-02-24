@@ -1,6 +1,9 @@
 fastapi
-uvicorn[standard]
+uvicorn
+gunicorn
+httpx
 openai
 python-dotenv
 pylint
 radon
+pydantic
