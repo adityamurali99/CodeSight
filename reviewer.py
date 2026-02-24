@@ -30,10 +30,9 @@ async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
     
     # Agent 1: Review
     payload = (
-        f"CODE:\n{clean_code}\n\n"
-        f"STATIC ANALYSIS:\n{static_data}\n\n"
-        f"DEPENDENCIES:\n{dependency_context}\n\n"
-        f"POTENTIAL IMPACT:\n{impact_context}"
+        f"### TARGET CODE:\n{clean_code}\n\n"
+        f"### STATIC ANALYSIS:\n{static_data if static_data else 'No static analysis issues found.'}\n\n"
+        f"### REPOSITORY CONTEXT:\nDependencies: {dependency_context}\nImpact: {impact_context}"
     )
     
     resp1 = await client.chat.completions.create(
