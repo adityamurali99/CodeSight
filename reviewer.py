@@ -5,11 +5,25 @@ from schemas import ReviewResponse
 from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 from utils.factory import client
 
-
 async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
-    clean_code = "\n".join([l[1:] for l in diff_text.split('\n') if l.startswith('+') and not l.startswith('+++')])
+    # THE EASY FIX: Keep whitespace after the '+' to preserve indentation
+    lines = diff_text.split('\n')
+    clean_lines = []
     
-    # Deterministic Context Retrieval
+    for line in lines:
+        # Only grab lines that start with a single '+', but ignore the '+++' header
+        if line.startswith('+') and not line.startswith('+++'):
+            # This keeps the indentation (spaces) intact
+            clean_lines.append(line[1:])
+            
+    clean_code = "\n".join(clean_lines)
+    
+    # Check if we actually have code to review
+    if not clean_code.strip():
+        # Return a dummy response if the diff was empty to avoid AI confusion
+        return ReviewResponse(summary="No new code detected in this diff.", impact_analysis="None")
+
+    # --- Keep the rest of your logic as is ---
     dependency_context = graph.get_context(clean_code, hops=2)
     impact_context = graph.get_impact_analysis(clean_code, hops=1)
     static_data = StaticAnalyzer.run_analysis(clean_code)
