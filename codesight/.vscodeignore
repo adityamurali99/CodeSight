@@ -1,3 +1,5 @@
+!images
+!images/*.png
 .vscode/**
 .vscode-test/**
 src/**

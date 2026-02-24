@@ -1,9 +1,14 @@
 {
-  "name": "codesight",
-  "displayName": "CodeSight AI",
+  "name": "coderift",
+  "displayName": "Coderift",
   "publisher": "AdityaMurali",
-  "description": "AI-powered code reviews and quick fixes directly in your editor.",
-  "version": "0.0.2",
+  "description": "Catch issues. Fix faster. Never leave your editor.",
+  "version": "0.0.4",
+  "icon": "images/logo.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/adityamurali99/CodeSight",
@@ -17,22 +22,21 @@
     "Linters",
     "Other"
   ],
-  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "codesight.review",
-        "title": "CodeSight: Review Current File"
+        "command": "coderift.review",
+        "title": "Coderift: Review Current File"
       }
     ],
     "configuration": {
-      "title": "CodeSight AI",
+      "title": "Coderift",
       "properties": {
-        "codesight.openaiApiKey": {
+        "coderift.openaiApiKey": {
           "type": "string",
           "default": "",
-          "description": "Enter your OpenAI API Key to power CodeSight reviews.",
+          "description": "Enter your OpenAI API Key to power Coderift reviews.",
           "scope": "application"
         }
       }
@@ -42,19 +46,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "@types/vscode": "^1.80.0",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.16.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.0.0"
+    "lint": "eslint src"
   },
   "dependencies": {
     "axios": "^1.6.0"
