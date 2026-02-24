@@ -1,25 +1,42 @@
-# AI Code Reviewer
+# Coderift
 
-A static analysis tool for Pull Requests that maps cross-file dependencies and surfaces architectural risks before they merge.
+**Catch issues. Fix faster. Never leave your editor.**
 
----
+Coderift is a VS Code extension that delivers real-time, AI-driven diagnostics and one-click refactoring suggestions — no context switching, no PR delays.
 
-## Features
+## Features (v0.0.4)
 
-**Deterministic Code Graph** — Parses Python source with the `ast` module to extract function calls, definitions, and class inheritance. The graph gives the AI precise, structured context rather than raw text.
+- **Real-time Analysis** — Instant fix suggestions via the `coderift.review` command
+- **Intelligent Diagnostics** — Detects logic flaws, code smells, and bugs with context-aware analysis
+- **One-Click Refactoring** — Apply AI suggestions using native VS Code Quick Fixes
+- **Secure Config** — Bring your own OpenAI API key; analysis stays private
 
-**Impact Analysis** — Tracks incoming edges on modified nodes to identify what else in the codebase depends on changed code. Callers and subclasses are surfaced explicitly so side effects don't go unnoticed.
+## Architecture
 
-**Reviewer-Auditor Pipeline** — A two-agent loop where a second model audits the first's suggestions against Pylint/Radon output and a syntax sandbox. Suggestions that don't pass are revised before surfacing.
-
----
-
-## Modules
-
-| Module | Responsibility |
+| Layer | Stack |
 | :--- | :--- |
-| `graph_builder.py` | Parses source files and extracts function calls and definitions via AST |
-| `graph_manager.py` | Maintains the dependency graph and handles traversal queries |
-| `github_client.py` | Fetches PR diffs and changed files; posts review comments back to GitHub |
-| `reviewer.py` | Orchestrates the analysis pipeline and injects graph context into prompts |
-| `sandbox.py` | Validates AI-generated code suggestions for syntax correctness before use |
+| **Extension** | TypeScript, VS Code Extension API |
+| **Backend** | Python, FastAPI (hosted on Railway) |
+| **AI Engine** | OpenAI GPT-4o, prompt engineering |
+| **DevOps** | GitHub Actions, VS Code Marketplace |
+
+## Roadmap
+
+- ✅ **Phase 1** — Core VS Code extension with real-time diagnostics
+- 🔄 **Phase 2** — GitHub PR Agent: automated PR reviews via webhooks *(in development)*
+- 🔲 **Phase 3** — Multi-file context analysis and custom coding standards
+
+## Getting Started
+
+1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=AdityaMurali.coderift)
+2. Add your OpenAI API key under **Settings → Coderift**
+3. Open any Python file and run `Coderift: Review Current File` (`Cmd+Shift+P`)
+4. Hover over diagnostics → click **Quick Fix** to apply suggestions
+
+## License
+
+MIT — see `LICENSE` for details.
+
+---
+
+Built by [Aditya Murali](https://github.com/adityamurali99)
