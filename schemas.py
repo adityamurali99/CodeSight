@@ -8,13 +8,8 @@ class CodeSnippet(BaseModel):
 
 class ReviewFinding(BaseModel):
     category: str = Field("General", alias="type")
-    
-    # AI often forgets line numbers; defaulting to 1 prevents a crash
     line_number: int = Field(1, alias="line") 
-    
     issue: str
-    
-    # Make this Optional so it doesn't crash if 'fix' is missing
     suggestion: Optional[str] = Field(None, alias="fix")
 
     model_config = ConfigDict(

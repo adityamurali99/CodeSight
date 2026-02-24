@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 
-// 1. Updated collection name
 const diagnostics = vscode.languages.createDiagnosticCollection('coderift');
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,12 +12,10 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // 2. Updated command ID to 'coderift.review'
     let reviewCmd = vscode.commands.registerCommand('coderift.review', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
 
-        // 3. Updated config call to 'coderift'
         const config = vscode.workspace.getConfiguration('coderift');
         const userApiKey = config.get<string>('openaiApiKey')?.trim() || "";
 
@@ -73,7 +70,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
-// Fixer class renamed for consistency
 export class CoderiftFixer implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext): vscode.CodeAction[] {

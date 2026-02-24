@@ -9,8 +9,7 @@ from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> ReviewResponse:
     print("🚀 BACKGROUND TASK: analyze_code started", flush=True)
     
-    # 1. INITIALIZE CLIENT WITH USER KEY
-    # Fallback to env var for GitHub webhooks, otherwise use the provided user key
+
     if api_key is not None:
         current_key = api_key
     else:
@@ -19,11 +18,9 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
     if not current_key or current_key.strip() == "":
         raise ValueError("No valid OpenAI API key provided.")
 
-    # Create a local client for this specific request
-    # This ensures your server handles multiple users with different keys safely
+
     client = AsyncOpenAI(api_key=current_key)
 
-    # --- 2. SMART CONTENT DETECTION (No changes needed) ---
     is_diff = diff_text.startswith("diff --git") or "@@" in diff_text
 
     if is_diff:
@@ -57,7 +54,6 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
         f"### REPOSITORY CONTEXT:\nDependencies: {dependency_context}\nImpact: {impact_context}"
     )
     
-    # Use the local 'client' variable
     resp1 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -72,7 +68,6 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
     sandbox = validate_code_safety(draft.get("fixed_code", ""))
     final_payload = f"DATA: {static_data}\nSANDBOX: {sandbox}\nDRAFT: {draft}"
     
-    # Use the local 'client' variable again
     resp2 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -82,5 +77,4 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
         response_format={"type": "json_object"}
     )
     
-    # --- 4. RETURN STRUCTURED RESPONSE ---
     return ReviewResponse.model_validate_json(resp2.choices[0].message.content)

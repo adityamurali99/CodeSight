@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Header
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-# Import your logic
 from utils.github_client import GitHubClient
 from utils.graph_manager import GraphManager
 from reviewer import analyze_code
@@ -17,7 +16,6 @@ logger = logging.getLogger("api-suite")
 
 app = FastAPI()
 
-# Standard CORS to allow your VS Code extension to talk to Railway
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
