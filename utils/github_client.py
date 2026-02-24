@@ -11,13 +11,15 @@ class GitHubClient:
         self.headers = {
             "Authorization": f"token {self.token}",
             "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "CodeSight-Reviewer-Bot"
         }
 
     async def get_diff(self, diff_url: str) -> str:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 diff_url, 
-                headers={**self.headers, "Accept": "application/vnd.github.v3.diff"}
+                headers={**self.headers, "Accept": "application/vnd.github.v3.diff"}, 
+                follow_redirects=True
             )
             return response.text if response.status_code == 200 else ""
 

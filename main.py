@@ -50,12 +50,19 @@ async def process_review_task(repo_name: str, pr_number: int, diff_url: str, bas
         diff_text = await github.get_diff(diff_url)
         review_result = await analyze_code(diff_text, graph_manager)
 
+        # Build the specific findings list
+        findings_md = ""
+        for f in review_result.findings:
+            findings_md += f"- **{f.category.upper()}** (Line {f.line_number}): {f.issue}\n"
+
         comment_body = (
             f"## 🤖 Graph-Augmented AI Review\n\n"
             f"### 📋 Summary\n{review_result.summary}\n\n"
-            f"### 🧠 Impact Analysis\n> {review_result.thought_process}\n\n"
+            f"### 🔍 Key Findings\n{findings_md}\n\n" # Added this section
+            f"### 🧠 Thought Process\n> {review_result.thought_process}\n\n"
             f"### ✅ Suggested Improvement\n```python\n{review_result.fixed_code}\n```"
         )
+
         await github.post_comment(repo_name, pr_number, comment_body)
     except Exception as e:
         logger.error(f"Pipeline Error: {e}")
