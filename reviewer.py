@@ -6,11 +6,9 @@ from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 from utils.factory import client
 
 async def analyze_code(diff_text: str, graph: object) -> ReviewResponse:
-    try:
-        # your existing code here
-        print("Starting AI analysis...", flush=True)
-    except Exception as e:
-        print(f"❌ CRITICAL ERROR: {str(e)}", flush=True)
+    print("🚀 BACKGROUND TASK: analyze_code started", flush=True)
+    print(f"DEBUG: RAW DIFF RECEIVED (first 200 chars):\n{diff_text[:200]}", flush=True)
+
 
     lines = diff_text.split('\n')
     clean_lines = []
