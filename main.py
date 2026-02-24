@@ -4,7 +4,7 @@ import hashlib
 import logging
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Header
 from dotenv import load_dotenv
-from openai import AsyncOpenAI
+from utils.factory import client
 
 from utils.github_client import GitHubClient
 from utils.graph_manager import GraphManager
@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api-suite")
 
 app = FastAPI()
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 github = GitHubClient()
 graph_manager = GraphManager()
 
