@@ -41,23 +41,20 @@ async def verify_signature(request: Request, signature: str):
     if not hmac.compare_digest(expected, signature.split('=')[-1]):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
-async def process_review_task(repo_name: str, pr_number: int, diff_url: str, base_branch: str):
+async def process_review_task(repo_name, pr_number, diff_url, base_ref):
+    # FORCE A LOG IMMEDIATELY
+    print(f"DEBUG: Starting task for PR {pr_number}", flush=True)
     try:
-        repo_files = await github.get_repo_contents(repo_name, base_branch)
-        graph_manager.build_from_contents(repo_files)
+        # Comment out the complex stuff for ONE test run
+        # static_data = StaticAnalyzer.run_analysis(clean_code) 
         
-        diff_text = await github.get_diff(diff_url)
-        review_result = await analyze_code(diff_text, graph_manager)
-
-        comment_body = (
-            f"## 🤖 Graph-Augmented AI Review\n\n"
-            f"### 📋 Summary\n{review_result.summary}\n\n"
-            f"### 🧠 Impact Analysis\n> {review_result.thought_process}\n\n"
-            f"### ✅ Suggested Improvement\n```python\n{review_result.fixed_code}\n```"
-        )
-        await github.post_comment(repo_name, pr_number, comment_body)
+        # Just print the payload size
+        print(f"DEBUG: Task is alive for {repo_name}", flush=True)
+        
+        # Call your analysis
+        # ... rest of code
     except Exception as e:
-        logger.error(f"Pipeline Error: {e}")
+        print(f"ERROR IN TASK: {str(e)}", flush=True)
 
 
 @app.post("/webhook")
