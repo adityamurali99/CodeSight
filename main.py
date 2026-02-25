@@ -46,8 +46,7 @@ async def verify_signature(request: Request, signature: str):
 
 async def process_review_task(repo_name: str, pr_number: int, diff_url: str, base_branch: str):
     try:
-        local_graph = GraphManager()  # fresh instance per review, avoids shared state bug
-
+        local_graph = GraphManager()  
         repo_files = await github.get_repo_contents(repo_name, base_branch)
         local_graph.build_from_contents(repo_files)
 
