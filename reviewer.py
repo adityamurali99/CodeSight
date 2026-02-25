@@ -2,14 +2,12 @@ import json
 import os
 from openai import AsyncOpenAI  
 from utils.analyzer import StaticAnalyzer
-from utils.sandbox import validate_code_safety
 from schemas import ReviewResponse
 from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 
 async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> ReviewResponse:
     print("🚀 BACKGROUND TASK: analyze_code started", flush=True)
     
-
     if api_key is not None:
         current_key = api_key
     else:
@@ -17,7 +15,6 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
 
     if not current_key or current_key.strip() == "":
         raise ValueError("No valid OpenAI API key provided.")
-
 
     client = AsyncOpenAI(api_key=current_key)
 
@@ -64,10 +61,10 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
     )
     draft = json.loads(resp1.choices[0].message.content)
 
-    # Agent 2: Auditor
-    sandbox = validate_code_safety(draft.get("fixed_code", ""))
-    final_payload = f"DATA: {static_data}\nSANDBOX: {sandbox}\nDRAFT: {draft}"
-    
+    #Code and static analysis feedback provided to auditor
+    final_payload = f"TARGET CODE:\n{clean_code}\n\nSTATIC ANALYSIS:\n{static_data}\n\nREVIEWER DRAFT:\n{draft}"
+
+    #Agent 2: Auditor
     resp2 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[

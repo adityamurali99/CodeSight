@@ -25,7 +25,6 @@ app.add_middleware(
 )
 
 github = GitHubClient()
-graph_manager = GraphManager()
 
 WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 
@@ -46,16 +45,14 @@ async def verify_signature(request: Request, signature: str):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 async def process_review_task(repo_name: str, pr_number: int, diff_url: str, base_branch: str):
-    """
-    Note: This background task for GitHub Webhooks still uses YOUR 
-    server-side API key (from .env) because GitHub doesn't provide a user key.
-    """
     try:
+        local_graph = GraphManager()  # fresh instance per review
+        
         repo_files = await github.get_repo_contents(repo_name, base_branch)
-        graph_manager.build_from_contents(repo_files)
+        local_graph.build_from_contents(repo_files)
         
         diff_text = await github.get_diff(diff_url)
-        review_result = await analyze_code(diff_text, graph_manager)
+        review_result = await analyze_code(diff_text, local_graph)
 
         findings_md = ""
         for f in review_result.findings:
@@ -96,7 +93,7 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks, x_
 async def analyze_local(request: Request):
     """
     Endpoint for VS Code Extension.
-    Uses the API key provided by the USER to protect your limits.
+    Uses the API key provided by the USER to protect limits.
     """
     data = await request.json()
     user_code = data.get("code")
