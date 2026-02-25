@@ -46,11 +46,11 @@ async def verify_signature(request: Request, signature: str):
 
 async def process_review_task(repo_name: str, pr_number: int, diff_url: str, base_branch: str):
     try:
-        local_graph = GraphManager()  # fresh instance per review
-        
+        local_graph = GraphManager()  # fresh instance per review, avoids shared state bug
+
         repo_files = await github.get_repo_contents(repo_name, base_branch)
         local_graph.build_from_contents(repo_files)
-        
+
         diff_text = await github.get_diff(diff_url)
         review_result = await analyze_code(diff_text, local_graph)
 
@@ -76,17 +76,17 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks, x_
     payload = await request.json()
     event_type = request.headers.get("X-GitHub-Event")
     action = payload.get("action")
-    
+
     if event_type == "pull_request" and action in ["opened", "synchronize", "reopened"]:
         background_tasks.add_task(
-            process_review_task, 
+            process_review_task,
             payload["repository"]["full_name"],
             payload["pull_request"]["number"],
             payload["pull_request"]["diff_url"],
             payload["pull_request"]["base"]["ref"]
         )
         return {"status": "accepted"}
-            
+
     return {"status": "ignored"}
 
 @app.post("/analyze-local")
@@ -97,15 +97,16 @@ async def analyze_local(request: Request):
     """
     data = await request.json()
     user_code = data.get("code")
-    user_key = data.get("apiKey") 
+    user_key = data.get("apiKey")
     if not user_key or user_key.strip() == "":
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="API Key is missing. Please enter your key in Coderift settings."
         )
 
     try:
-        review_result = await analyze_code(user_code, graph_manager, api_key=user_key)
+        local_graph = GraphManager() 
+        review_result = await analyze_code(user_code, local_graph, api_key=user_key)
         return review_result.dict()
     except Exception as e:
         logger.error(f"Local Analysis Error: {e}")
