@@ -61,10 +61,10 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
     )
     draft = json.loads(resp1.choices[0].message.content)
 
-    #Code and static analysis feedback provided to auditor
+    #TODO: need to pass context to the AUDITOR too. 
     final_payload = f"TARGET CODE:\n{clean_code}\n\nSTATIC ANALYSIS:\n{static_data}\n\nREVIEWER DRAFT:\n{draft}"
 
-    #Agent 2: Auditor
+    #Agent 2: Auditor 
     resp2 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[
