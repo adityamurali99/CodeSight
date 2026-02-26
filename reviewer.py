@@ -2,7 +2,7 @@ import json
 import os
 from openai import AsyncOpenAI  
 from utils.analyzer import StaticAnalyzer
-from schemas import ReviewResponse
+from schemas import ReviewResponse, AuditResponse
 from prompts import SYSTEM_PROMPT, AUDITOR_PROMPT
 
 async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> ReviewResponse:
@@ -26,7 +26,7 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
         for line in lines:
             stripped_line = line.strip()
             if stripped_line.startswith('+') and not stripped_line.startswith('+++'):
-                clean_lines.append(line[line.find('+')+1:]) 
+                clean_lines.append(line[1:])  # Fix: was line[line.find('+')+1:], which breaks when '+' not at index 0
         clean_code = "\n".join(clean_lines).strip()
     else:
         clean_code = diff_text.strip()
@@ -39,7 +39,7 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
             fixed_code=""
         )
 
-    # --- 3. CONTEXT & ANALYSIS ---
+    # --- CONTEXT & ANALYSIS ---
     dependency_context = graph.get_context(clean_code, hops=2)
     impact_context = graph.get_impact_analysis(clean_code, hops=1)
     static_data = StaticAnalyzer.run_analysis(clean_code)
@@ -61,10 +61,14 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
     )
     draft = json.loads(resp1.choices[0].message.content)
 
-    #TODO: need to pass context to the AUDITOR too. 
-    final_payload = f"TARGET CODE:\n{clean_code}\n\nSTATIC ANALYSIS:\n{static_data}\n\nREVIEWER DRAFT:\n{draft}"
+    # Agent 2: Auditor
+    final_payload = (
+        f"### TARGET CODE:\n{clean_code}\n\n"
+        f"### STATIC ANALYSIS:\n{static_data}\n\n"
+        f"### REPOSITORY CONTEXT:\nDependencies: {dependency_context}\nImpact: {impact_context}\n\n"
+        f"### REVIEWER DRAFT:\n{json.dumps(draft, indent=2)}"
+    )
 
-    #Agent 2: Auditor 
     resp2 = await client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -73,5 +77,12 @@ async def analyze_code(diff_text: str, graph: object, api_key: str = None) -> Re
         ],
         response_format={"type": "json_object"}
     )
-    
-    return ReviewResponse.model_validate_json(resp2.choices[0].message.content)
+
+    audit_result = AuditResponse.model_validate_json(resp2.choices[0].message.content)
+
+    return ReviewResponse(
+        thought_process=f"[Verdict: {audit_result.verdict}] {draft.get('thought_process', '')}",
+        findings=audit_result.final_findings,
+        summary=audit_result.summary,
+        fixed_code=audit_result.fixed_code
+    )
