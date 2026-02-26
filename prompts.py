@@ -1,7 +1,6 @@
 import json
 from schemas import ReviewResponse, AuditResponse
 
-# Dynamically generated so prompts never drift from schemas
 REVIEWER_SCHEMA = json.dumps(ReviewResponse.model_json_schema(), indent=2)
 AUDITOR_SCHEMA = json.dumps(AuditResponse.model_json_schema(), indent=2)
 
